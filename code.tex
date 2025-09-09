@@ -1,0 +1,688 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{amsmath}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{geometry}
+\geometry{margin=0.5in}
+\usepackage{float}   % in preamble
+
+\usepackage{verbatim}
+\usepackage{caption}
+\usepackage{color}
+
+% Colors
+\definecolor{lightgray}{rgb}{.9,.9,.9}
+\definecolor{darkgray}{rgb}{.4,.4,.4}
+\definecolor{purple}{rgb}{0.65, 0.12, 0.82}
+
+% Define JavaScript with custom keyword groups
+\lstdefinelanguage{JavaScript}{
+  keywords={typeof, module,new,model, true, false, function, return, null, switch, var, if, in, while, do, else, case, break, const, let},
+  keywordstyle=\color{blue}\bfseries,
+  ndkeywords={class, export, boolean, throw, implements, import, this},
+  ndkeywordstyle=\color{darkgray}\bfseries,
+  identifierstyle=\color{black},
+  sensitive=false,
+  comment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  commentstyle=\color{teal}\ttfamily,
+  stringstyle=\color{red}\ttfamily,
+  morestring=[b]',
+  morestring=[b]",
+  % --- special group for try/catch ---
+  morekeywords=[2]{try,catch,exports},
+  morekeywords=[3]{mongoose, mongooseUrl}
+}
+
+% Apply styles
+\lstset{
+   language=JavaScript,
+   extendedchars=true,
+   basicstyle=\footnotesize\ttfamily,
+   showstringspaces=false,
+   showspaces=false,
+   tabsize=2,
+   breaklines=true,
+   showtabs=false,
+   captionpos=b,
+    backgroundcolor=\color{white},
+    basicstyle=\ttfamily\small,
+   keywordstyle=[2]\color{purple}\bfseries, % purple for try/catch
+   keywordstyle=[3]\color{orange}\bfseries, % purple for try/catch
+   frame=single
+}
+
+\title{Urban Wave Assignment}
+\author{Dhruv Rana}
+\date{28 August 2025}
+
+\begin{document}
+\maketitle
+
+\section{MongoDB scripts for database creation and data insertion}
+\subsection{Creation of database}
+\begin{lstlisting}
+const mongoose = require('mongoose');
+const mongooseUrl = "mongodb://localhost:27017/BDA_Demo";
+mongoose.connect(mongooseUrl).then(console.log("Connected to MongoDB")).catch(err => console.log(err));
+
+\end{lstlisting}
+
+\subsection{Schema Creation}
+\subsubsection{User Schema}
+\begin{lstlisting}
+const mongoose=require('mongoose');
+const {Schema} =require('mongoose');
+const userSchema=new Schema({
+    username:{
+        type:String,
+        unique:true,
+        required:true
+    },
+    fullName:{
+        type:String,
+        required:true
+    },
+    email:{
+        type:String,
+        unique:true,
+        required:true
+    },
+    age:{
+        type:Number
+    },
+    bio:{
+        type:String
+    },
+    interests:{
+        type:[String],
+    },
+    location: {
+    type: {
+    type: String,
+    enum: ['Point'],   
+    required: true,
+    default: 'Point'
+  },
+  coordinates: {
+    type: [Number],    // [longitude, latitude]
+    required: true,
+    validate: {
+      validator: function (value) {
+        return value.length === 2; 
+      },
+      message: 'Coordinates must be [longitude, latitude]'
+    }
+  },
+  city: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  state: {
+    type: String,
+    required: true,
+    trim: true
+  }
+},
+screenTime: {
+    type: Number,
+    required: true
+},
+followersCount:{
+    type: Number,
+    default: 0
+},
+followingCount:{
+    type: Number,
+    default: 0
+},
+isActive:{
+    type: Boolean,
+    default:true
+    // required: true
+},
+createdAt:{
+    type:Date,
+    default:Date.now,
+    required: true
+},
+lastSeen:{
+    type:Date,
+    default:Date.now,
+    // required: true
+}
+})
+
+module.exports=mongoose.model('User',userSchema);
+\end{lstlisting}
+
+
+\subsubsection{Post Schema}
+\begin{lstlisting}
+    const mongoose=require('mongoose');
+const {Schema} =require('mongoose');
+
+const postSchema=new Schema({
+    userId:{
+        type:mongoose.Schema.Types.ObjectId,
+        ref:'User',
+        required:true
+    },
+    type:{
+        type:String,
+        enum:['post','reel'],
+        required:true
+    },
+    content:{
+        type:String,
+        required:true
+    },
+    caption:{
+        type:String,
+        required:true
+    },
+    hashtags:{
+        type:[String]
+    },
+    
+    location: {
+    type: {
+    type: String,
+    enum: ['Point'],  
+    required: true,
+    default: 'Point'
+  },
+  coordinates: {
+    type: [Number],    // [longitude, latitude]
+    required: true,
+    validate: {
+      validator: function (value) {
+        return value.length === 2; // Must have [lon, lat]
+      },
+      message: 'Coordinates must be [longitude, latitude]'
+    }
+  },
+  city: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  state: {
+    type: String,
+    required: true,
+    trim: true
+  }
+},
+likes: {
+    type: Number,
+    default: 0
+},
+comments:{
+    type: Number,
+    default: 0
+    
+},
+shares:{
+    type: Number,
+    default: 0
+    
+},
+views:{
+    type: Number,
+    default: 0
+},
+createdAt:{
+    type:Date,
+    default:Date.now,
+    required: true
+},
+})
+module.exports=mongoose.model('Post',postSchema);
+\end{lstlisting}
+
+\subsubsection{Follower Schema}
+\begin{lstlisting}
+const mongoose=require('mongoose');
+const {Schema}=mongoose;
+
+const followerSchema=new Schema({
+    userId:{
+        type:mongoose.Schema.Types.ObjectId,
+        ref:'User',
+        required:true,
+        unique:true
+    },
+    followerId:{
+        type:[mongoose.Schema.Types.ObjectId],
+        ref:'User',
+        default:[],
+        required:true
+    },
+    followingId:{
+        type:[mongoose.Schema.Types.ObjectId],
+        ref:'User',
+        default:[],
+        required:true
+    },
+    createdAt:{
+        type:Date,
+        default:Date.now,
+        required:true
+    }
+});
+
+module.exports=mongoose.model('Followers',followerSchema);    
+\end{lstlisting}
+
+\subsection{Data Insertion}
+\subsubsection{Insertion of User}
+\begin{lstlisting}
+    expressRouter.get('/create_user', async (req, res) => {
+    try {
+        const userData = {
+            username: "riya_fashion",
+            fullName: "Riya Thakkar",
+            email: "riyathakkar@gmail.com",
+            age: 21,
+            bio: "This is bio for Riya Thakkar",
+            interests: ['fashion', 'beauty', 'lifestyle'],
+            location: { type: "Point", coordinates: [73.2081, 22.3072] ,city:"Vadodara",state:"Gujarat"},
+            screenTime: 250,
+        };
+        const user = await userSchema.create(userData);
+        res.render("user.ejs", { user });
+    } catch (error) {
+        res.send("Error:" + error.message);
+    }
+});
+\end{lstlisting}
+
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.55\textwidth]{user.png}
+    \caption{User Insertion into MongoDB}
+    \label{fig:sample}
+\end{figure}
+
+
+\subsubsection{Insertion of a post}
+\begin{lstlisting}
+    
+expressRouter.get('/create_post', async (req, res) => {
+    try {
+        const post = await postSchema.create({
+                userId:"68bed3c420a0aeac59c559cf",
+                type:"reel", //change to post for uploading image 
+                content:"coding",
+                caption:"i am a new post by new priyansu",
+                hashtags: ["#fashion","#travel","#coding"],
+                location:{coordinates: [68.9685 ,22.2442], type: "Point", city:"Rajkot", state:"Gujarat"},
+        });
+        res.render("post.ejs",{post});
+    } catch (error) {
+        res.send(error.message);
+    }
+});
+\end{lstlisting}
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.55\textwidth]{post.png}
+    \caption{Post Insertion into MongoDB}
+    \label{fig:sample}
+\end{figure}
+
+\subsubsection{Insertion of follow relationship}
+\begin{lstlisting}
+        const follower= await followerSchema.create({
+            userId: "68af11b1ff8785cec12a60ae",
+            followerId: "68af120be6f38faee252dcdd",
+            followingId: "68af22aab8ac06908bc07bcc"
+        });
+        
+\end{lstlisting}
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.6\textwidth]{follower.png}
+    \caption{Post Insertion into MongoDB}
+    \label{fig:sample}
+\end{figure}
+
+
+\section{Task Queries}
+\subsection{CRUD Operations}
+
+\subsubsection{Find all users from a specific city}
+    \begin{lstlisting}
+    
+expressRouter.get('/fetchcity', async (req, res) => {
+    try {
+        const users = await userSchema.find({
+            "location.city":{$eq:"Vadodara"}
+        });
+        res.render("all_users.ejs", { users });
+    } catch (error) {
+        res.send(error.message);
+    }
+});
+    \end{lstlisting}
+    
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1.1\textwidth]{samecity.png}
+    \caption{User from same city}
+    \label{fig:sample}
+\end{figure}
+
+\subsubsection{Find users younger than 25 years}
+    \begin{lstlisting}
+        expressRouter.get('/fetchage', async (req, res) => {
+    try {
+        const users = await userSchema.find({
+            age: { $lt: 25 }
+        });
+        res.render("all_users.ejs", { users });
+    } catch (error) {
+        res.send(error.message);
+    }
+});
+    \end{lstlisting}
+    \begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.48]{agegt25.png}
+
+    \caption{List of users with age less than 25}
+    \label{fig:sample}
+\end{figure}
+    
+
+\subsubsection{Find users with screen time greater than 150 minutes}
+    \begin{lstlisting}
+        expressRouter.get('/fetchst', async (req, res) => {
+    try {
+        const users = await userSchema.find({
+            screenTime: { $gt: 150 }
+        });
+        res.render("all_users.ejs", { users });
+    } catch (error) {
+        res.send(error.message);
+    }
+});
+    \end{lstlisting}
+    \begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.5]{screentime.png}
+
+    \caption{Post Insertion into MongoDB}
+    \label{fig:sample}
+\end{figure}
+    
+
+\subsubsection{Update a user’s bio and interests}
+    \begin{lstlisting}
+expressRouter.get('/update', async (req, res) => {
+    try {
+        const users = await userSchema.findOneAndUpdate(
+            { interests: 'coding' },
+            {
+                $set: { interests:['skating_changed','coding_changed','new_interest'] , bio:'This is updated bio for the user with interest in coding' },
+                $currentDate: { lastModified: true }
+            });
+            res.send(users);
+    } catch (error) {
+        res.send(error.message);
+    }
+});
+    \end{lstlisting}
+    \begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{update.png}
+
+    \caption{Updation of user interests and bio}
+    \label{fig:sample}
+\end{figure}
+    
+
+\subsubsection{Delete posts older than a specific date}
+    \begin{lstlisting}
+expressRouter.get('/deleteoldpost', async (req, res) => {
+    try {
+        console.log();
+        const posts = await postSchema.findOne({ createdAt: { $lt:new Date(Date.now()-30*60*1000) } }); //post less than last 30 minutes
+         await postSchema.deleteOne({ createdAt: { $lt:new Date(Date.now()-30*60*1000) } }); //post less last 30 minutes
+        res.send( posts );
+    } catch (error) {
+        res.send(error.message);
+    }
+});
+    \end{lstlisting}
+    \begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{deletepost.png}
+
+    \caption{Deletion of post}
+    \label{fig:sample}
+\end{figure}
+    
+\subsection{Data Filtering and Sorting}
+\subsubsection{Find posts of type ”reel” with more than 100 likes}
+\begin{lstlisting}
+    expressRouter.get('/fetchlikes', async (req, res) => {
+    try {
+        const posts = await postSchema.find({ $and:[{type:'reel'},{likes:{$gt:100}}] });
+        res.render("all_posts.ejs", { posts });
+    } catch (error) {
+        res.send(error.message);
+    }
+});
+\end{lstlisting}
+    \begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{like100.png}
+    \caption{Post with more than 100 likes}
+    \label{fig:sample}
+\end{figure}
+
+\subsubsection{Sort users by followers count (descending)}
+\begin{lstlisting}
+    
+expressRouter.get('/sort', async (req, res) => {
+    try {
+        const users =await userSchema.find().sort({followersCount:-1});
+            res.render("all_users.ejs", { users });
+    } catch (error) {
+        res.send(error.message);
+    }
+});
+
+\end{lstlisting}
+    \begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.45]{sort.png}
+    \caption{Users with decreasing order of follower}
+    \label{fig:sample}
+\end{figure}
+
+
+\vspace{10in}
+\subsubsection{Find users with specific interests (e.g., ”travel” and ”photography”)}
+\begin{lstlisting}
+expressRouter.get('/interests', async (req, res) => {
+    try {
+        const users = await userSchema.find(
+            { interests: 'fashion' }
+        );
+        res.render("all_users.ejs", { users });
+    } catch (error) {
+        res.send(error.message);
+    }
+});
+
+\end{lstlisting}
+    \begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.8]{interest.png}
+    \caption{Users with specific interests}
+    \label{fig:sample}
+\end{figure}
+
+\subsubsection{Get posts from the last 30 days”)}
+\begin{lstlisting}
+
+expressRouter.get('/fetcholdposts', async (req, res) => {
+    try {
+        console.log();
+        const posts = await postSchema.find({ createdAt: { $gt:new Date(Date.now()-30*60*1000) } }); //post from last 30 minutes
+        res.render("all_posts.ejs", { posts });
+    } catch (error) {
+        res.send(error.message);
+    }
+});
+
+\end{lstlisting}
+    \begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.8]{oldpost_30min.png}
+    \caption{Posts created 30 mins earlier}
+    \label{fig:sample}
+\end{figure}
+
+
+\subsubsection{Get posts from the last 30 minutes}
+\begin{lstlisting}
+expressRouter.get('/active', async (req, res) => {
+    try {
+        const users =await userSchema.find({isActive:false});
+            res.render("all_users.ejs", { users });
+    } catch (error) {
+        res.send(error.message);
+    }
+});
+
+\end{lstlisting}
+    \begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.65]{active.png}
+    \caption{Active users}
+    \label{fig:sample}
+\end{figure}
+
+\section{Geospatial Queries}
+\subsection{Location-Based Queries}
+\subsubsection{Create a 2dsphere index on user locations}
+\begin{lstlisting}
+    db.users.createIndex({ location: "2dsphere" });
+\end{lstlisting}
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.5]{index.png}
+    \caption{2d index for GeoLocation queries}
+    \label{fig:sample}
+\end{figure}
+
+\subsubsection{Find users within 100km radius of Ahmedabad}
+\begin{lstlisting}
+    
+expressRouter.get('/near', async (req, res) => {
+    try {
+        const users =await userSchema.find({
+            location: {
+                $near: {
+                    $geometry: {
+                        type: "Point", coordinates: [72.5714, 23.0225] //Ahmedabad
+                    },
+                    $maxDistance: 150000
+                }
+            }
+        });
+            res.render("all_users.ejs", { users });
+    } catch (error) {
+        res.send(error.message);
+    }
+});
+
+\end{lstlisting}
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.5]{near.png}
+    \caption{User in 100km radius of Ahmedabad}
+    \label{fig:sample}
+\end{figure}
+
+\subsubsection{Find the nearest user to a given coordinate}
+\begin{lstlisting}
+    
+expressRouter.get('/nearcord', async (req, res) => {
+    try {
+        const users =await userSchema.findOne({
+            location: {
+                $near: {
+                    $geometry: {
+                        type: "Point", coordinates: [72.5714, 23.0225] //Ahmedabad
+                    }
+                }
+            }
+        });
+            res.send(users);
+    } catch (error) {
+        res.send(error.message);
+    }
+});
+
+\end{lstlisting}
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.8]{nearcord.png}
+    \caption{User near a coordinate}
+    \label{fig:sample}
+\end{figure}
+
+
+\subsubsection{Get users from multiple cities using in operator}
+\begin{lstlisting}
+  
+expressRouter.get('/incity', async (req, res) => {
+    try {
+        const users =await userSchema.find({
+            "location.city": {$in: ['Ahmedabad','Surat','Vadodara']}
+        });
+            res.render("all_users.ejs",{users});
+    } catch (error) {
+        res.send(error.message);
+    }
+});
+
+
+\end{lstlisting}
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.65]{incity.png}
+    \caption{Users in given cities}
+    \label{fig:sample}
+\end{figure}
+
+
+\subsubsection{Calculate distance between two users}
+\begin{lstlisting}
+  
+
+
+\end{lstlisting}
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.65]{distance.png}
+    \caption{Distance between two users}
+    \label{fig:sample}
+\end{figure}
+
+
+
+
+\end{document}
