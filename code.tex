@@ -5,7 +5,7 @@
 % You need to   customize the colors used for code highlighting.
 % Just edit the \definecolor commands or the keywordstyle settings.
 %
-% For example:
+% For example:https://github.com/DhruvRana2704/Urban_Wave_Overleaf/edit/main/code.tex
 %   keywordstyle=[2]\color{purple}\bfseries   → change 'purple' to any color
 %   keywordstyle=[3]\color{orange}\bfseries   → change 'orange' to another color
 %
@@ -38,8 +38,6 @@
 % just delete these lines. The rest of the setup will still provide
 % standard JavaScript syntax highlighting.
 % --------------------------------------------------------------------
-
-
 \documentclass[12pt,a4paper]{article}
 \usepackage{graphicx} % Required for inserting images
 \usepackage{amsmath}
@@ -48,6 +46,10 @@
 \usepackage{geometry}
 \geometry{margin=0.5in}
 \usepackage{float}   % in preamble
+\usepackage{titlesec}    % custom section titles
+\usepackage{titling}     % control over title
+\usepackage{lmodern}     % better fonts
+
 
 \usepackage{verbatim}
 \usepackage{caption}
@@ -94,13 +96,24 @@
    keywordstyle=[3]\color{orange}\bfseries, % purple for try/catch
    frame=single
 }
+\pretitle{\centering\Huge\bfseries\color{purple}}
+\posttitle{\par\vskip 0.5em}
+
+\preauthor{\centering\Large\itshape\color{teal}}
+\postauthor{\par\vskip 0.5em}
+
+\predate{\centering\color{gray}}
+\postdate{\par\vskip 1em}
 
 \title{Urban Wave Assignment}
 \author{Dhruv Rana}
-\date{28 August 2025}
+\date{8 September 2025}
+
 
 \begin{document}
+
 \maketitle
+
 
 \section{MongoDB scripts for database creation and data insertion}
 \subsection{Creation of database}
@@ -288,7 +301,6 @@ module.exports=mongoose.model('Post',postSchema);
 \begin{lstlisting}
 const mongoose=require('mongoose');
 const {Schema}=mongoose;
-
 const followerSchema=new Schema({
     userId:{
         type:mongoose.Schema.Types.ObjectId,
@@ -314,7 +326,6 @@ const followerSchema=new Schema({
         required:true
     }
 });
-
 module.exports=mongoose.model('Followers',followerSchema);    
 \end{lstlisting}
 
@@ -349,7 +360,7 @@ module.exports=mongoose.model('Followers',followerSchema);
     \label{fig:sample}
 \end{figure}
 
-
+\vspace{2.5in}
 \subsubsection{Insertion of a post}
 \begin{lstlisting}
     
@@ -391,7 +402,7 @@ expressRouter.get('/create_post', async (req, res) => {
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.6\textwidth]{follower.png}
+    \includegraphics[width=0.5\textwidth]{follower.png}
     \caption{Post Insertion into MongoDB}
     \label{fig:sample}
 \end{figure}
@@ -547,7 +558,7 @@ expressRouter.get('/sort', async (req, res) => {
 \end{lstlisting}
     \begin{figure}[H]
     \centering
-    \includegraphics[scale=0.45]{sort.png}
+    \includegraphics[scale=0.7]{sort.png}
     \caption{Users with decreasing order of follower}
     \label{fig:sample}
 \end{figure}
@@ -575,7 +586,7 @@ expressRouter.get('/interests', async (req, res) => {
     \label{fig:sample}
 \end{figure}
 
-\subsubsection{Get posts from the last 30 days”)}
+\subsubsection{Get posts from the last 30 minutes}
 \begin{lstlisting}
 
 expressRouter.get('/fetcholdposts', async (req, res) => {
@@ -591,13 +602,13 @@ expressRouter.get('/fetcholdposts', async (req, res) => {
 \end{lstlisting}
     \begin{figure}[H]
     \centering
-    \includegraphics[scale=0.8]{oldpost_30min.png}
+    \includegraphics[scale=0.7]{oldpost_30min.png}
     \caption{Posts created 30 mins earlier}
     \label{fig:sample}
 \end{figure}
 
 
-\subsubsection{Get posts from the last 30 minutes}
+\subsubsection{Get the active users}
 \begin{lstlisting}
 expressRouter.get('/active', async (req, res) => {
     try {
@@ -657,7 +668,7 @@ expressRouter.get('/near', async (req, res) => {
     \caption{User in 100km radius of Ahmedabad}
     \label{fig:sample}
 \end{figure}
-
+\vspace{1em}
 \subsubsection{Find the nearest user to a given coordinate}
 \begin{lstlisting}
     
@@ -665,23 +676,18 @@ expressRouter.get('/nearcord', async (req, res) => {
     try {
         const users =await userSchema.findOne({
             location: {
-                $near: {
-                    $geometry: {
+                $near: {$geometry: {
                         type: "Point", coordinates: [72.5714, 23.0225] //Ahmedabad
-                    }
-                }
-            }
-        });
-            res.send(users);
+                    }}}
+        });res.send(users);
     } catch (error) {
         res.send(error.message);
-    }
-});
+    }});
 
 \end{lstlisting}
 \begin{figure}[H]
     \centering
-    \includegraphics[scale=0.8]{nearcord.png}
+    \includegraphics[scale=0.7]{nearcord.png}
     \caption{User near a coordinate}
     \label{fig:sample}
 \end{figure}
@@ -713,7 +719,23 @@ expressRouter.get('/incity', async (req, res) => {
 
 \subsubsection{Calculate distance between two users}
 \begin{lstlisting}
-  
+  expressRouter.get('/getdist', async (req, res) => {
+    try {
+        const userA = await userSchema.findOne({ username: "priya_food" });
+        const userB = await userSchema.findOne({ username: "ansh" });
+
+        const result = await userSchema.aggregate([
+            {   $geoNear: {
+                    near: userA.location,
+                    distanceField: "distance",
+                    spherical: true,
+                    query: {username:userB.username}
+                }
+            }]);
+        res.send(`The distance between ${userA.fullName} and ${userB.fullName} is ${result[0].distance/1000} Km`);
+    } catch (error) {
+        res.status(500).send(error.message);
+    }});
 
 
 \end{lstlisting}
@@ -727,7 +749,5 @@ expressRouter.get('/incity', async (req, res) => {
 
 
 
+
 \end{document}
-
-
-
